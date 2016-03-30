@@ -16,7 +16,7 @@ use plugin::Plugin as PluginFor;
 use iron::headers::ContentType;
 
 #[cfg(feature = "rustc_serialize_type")]
-use rustc_serialize::json::{ToJson, Json, self};
+use rustc_serialize::json::{self, ToJson, Json};
 #[cfg(feature = "serde_type")]
 use serde::ser::Serialize as ToJson;
 #[cfg(feature = "serde_type")]
@@ -25,7 +25,7 @@ use serde_json::value::{self, Value as Json};
 #[derive(Clone)]
 pub struct JsonResponse {
     value: Json,
-    callback: Option<String>
+    callback: Option<String>,
 }
 
 #[cfg(feature = "rustc_serialize_type")]
@@ -33,7 +33,7 @@ impl JsonResponse {
     pub fn new<T: ToJson>(value: T, callback: Option<String>) -> JsonResponse {
         JsonResponse {
             value: value.to_json(),
-            callback: callback
+            callback: callback,
         }
     }
 }
@@ -43,7 +43,7 @@ impl JsonResponse {
     pub fn new<T: ToJson>(value: T, callback: Option<String>) -> JsonResponse {
         JsonResponse {
             value: value::to_value(&value),
-            callback: callback
+            callback: callback,
         }
     }
 }
@@ -65,8 +65,10 @@ impl PluginFor<Response> for JsonResponseMiddleware {
     type Error = ();
 
     fn eval(resp: &mut Response) -> Result<JsonResponse, ()> {
-        resp.extensions.get::<JsonResponseMiddleware>()
-            .ok_or(()).map(|t| t.clone())
+        resp.extensions
+            .get::<JsonResponseMiddleware>()
+            .ok_or(())
+            .map(|t| t.clone())
     }
 }
 
@@ -74,22 +76,26 @@ impl PluginFor<Response> for JsonResponseMiddleware {
 impl AfterMiddleware for JsonResponseMiddleware {
     fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
         let mut resp = r;
-        let header_body = resp.extensions.get::<JsonResponseMiddleware>().as_ref()
-            .and_then(|j|
-                      if let Ok(json_string) = json::encode(&j.value) {
-                          match j.callback {
-                              Some(ref cb) => {
-                                  let mut jsonp = String::new();
-                                  jsonp.push_str(cb);
-                                  jsonp.push('(');
-                                  jsonp.push(')');
-                                  Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
-                              },
-                              None => Some((ContentType::json(), json_string))
-                          }
-                      } else {
-                          None
-                      });
+        let header_body =
+            resp.extensions
+                .get::<JsonResponseMiddleware>()
+                .as_ref()
+                .and_then(|j| {
+                    if let Ok(json_string) = json::encode(&j.value) {
+                        match j.callback {
+                            Some(ref cb) => {
+                                let mut jsonp = String::new();
+                                jsonp.push_str(cb);
+                                jsonp.push('(');
+                                jsonp.push(')');
+                                Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
+                            }
+                            None => Some((ContentType::json(), json_string)),
+                        }
+                    } else {
+                        None
+                    }
+                });
 
         if let Some((content_type, body)) = header_body {
             if !resp.headers.has::<ContentType>() {
@@ -105,22 +111,26 @@ impl AfterMiddleware for JsonResponseMiddleware {
 impl AfterMiddleware for JsonResponseMiddleware {
     fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
         let mut resp = r;
-        let header_body = resp.extensions.get::<JsonResponseMiddleware>().as_ref()
-            .and_then(|j|
-                      if let Ok(json_string) = serde_json::to_string(&j.value) {
-                          match j.callback {
-                              Some(ref cb) => {
-                                  let mut jsonp = String::new();
-                                  jsonp.push_str(cb);
-                                  jsonp.push('(');
-                                  jsonp.push(')');
-                                  Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
-                              },
-                              None => Some((ContentType::json(), json_string))
-                          }
-                      } else {
-                          None
-                      });
+        let header_body =
+            resp.extensions
+                .get::<JsonResponseMiddleware>()
+                .as_ref()
+                .and_then(|j| {
+                    if let Ok(json_string) = serde_json::to_string(&j.value) {
+                        match j.callback {
+                            Some(ref cb) => {
+                                let mut jsonp = String::new();
+                                jsonp.push_str(cb);
+                                jsonp.push('(');
+                                jsonp.push(')');
+                                Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
+                            }
+                            None => Some((ContentType::json(), json_string)),
+                        }
+                    } else {
+                        None
+                    }
+                });
 
         if let Some((content_type, body)) = header_body {
             if !resp.headers.has::<ContentType>() {
