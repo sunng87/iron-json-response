@@ -10,7 +10,6 @@ extern crate serde_json;
 extern crate rustc_serialize;
 
 use iron::prelude::*;
-use iron::{status};
 use iron::{AfterMiddleware, typemap};
 use iron::modifier::Modifier;
 use plugin::Plugin as PluginFor;
@@ -75,27 +74,59 @@ impl PluginFor<Response> for JsonResponseMiddleware {
 impl AfterMiddleware for JsonResponseMiddleware {
     fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
         let mut resp = r;
-        if let Some(j) = resp.extensions.get::<JsonResponseMiddleware>().as_ref() {
-            if let Ok(json_string) = json::encode(&j.value) {
-                match j.callback {
-                    Some(ref cb) => {
-                        if resp.headers.has::<ContentType>() {
-                            resp.headers.set(ContentType(mime!(Text/Javascript; Charset=Utf8)))
-                        }
-                        let mut jsonp = String::new();
-                        jsonp.push_str(cb);
-                        jsonp.push('(');
-                        jsonp.push(')');
-                        resp.set_mut(jsonp);
-                    },
-                    None => {
-                        if resp.headers.has::<ContentType>() {
-                            resp.headers.set(ContentType::json());
-                        }
-                        resp.set_mut(json_string);
-                    }
-                }
+        let header_body = resp.extensions.get::<JsonResponseMiddleware>().as_ref()
+            .and_then(|j|
+                      if let Ok(json_string) = json::encode(&j.value) {
+                          match j.callback {
+                              Some(ref cb) => {
+                                  let mut jsonp = String::new();
+                                  jsonp.push_str(cb);
+                                  jsonp.push('(');
+                                  jsonp.push(')');
+                                  Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
+                              },
+                              None => Some((ContentType::json(), json_string))
+                          }
+                      } else {
+                          None
+                      });
+
+        if let Some((content_type, body)) = header_body {
+            if !resp.headers.has::<ContentType>() {
+                resp.headers.set(content_type);
             }
+            resp.set_mut(body);
+        }
+        Ok(resp)
+    }
+}
+
+#[cfg(feature = "serde_type")]
+impl AfterMiddleware for JsonResponseMiddleware {
+    fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
+        let mut resp = r;
+        let header_body = resp.extensions.get::<JsonResponseMiddleware>().as_ref()
+            .and_then(|j|
+                      if let Ok(json_string) = serde_json::to_string(&j.value) {
+                          match j.callback {
+                              Some(ref cb) => {
+                                  let mut jsonp = String::new();
+                                  jsonp.push_str(cb);
+                                  jsonp.push('(');
+                                  jsonp.push(')');
+                                  Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
+                              },
+                              None => Some((ContentType::json(), json_string))
+                          }
+                      } else {
+                          None
+                      });
+
+        if let Some((content_type, body)) = header_body {
+            if !resp.headers.has::<ContentType>() {
+                resp.headers.set(content_type);
+            }
+            resp.set_mut(body);
         }
         Ok(resp)
     }
