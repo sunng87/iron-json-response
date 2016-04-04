@@ -19,7 +19,7 @@ Middleware setup:
 
 ```rust
 extern crate iron_json_response as ijr;
-use ijr::JsonResponseMiddleware;
+use ijr::{JsonResponseMiddleware, JsonResponse};
 
 let mut chain = Chain::new(...);
 chain.link_after(JsonResponseMiddleware{});
@@ -32,8 +32,6 @@ Send json data:
 
 ```rust
 fn handler(req: &mut Request) -> IronResult<Response> {
-    use data::*;
-
     let mut resp = Response::new();
     let data = ...
 
@@ -48,8 +46,6 @@ Send json data via jsonp:
 
 ```rust
 fn handler(req: &mut Request) -> IronResult<Response> {
-    use data::*;
-
     let mut resp = Response::new();
     let data = ...
 
