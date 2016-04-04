@@ -28,23 +28,30 @@ pub struct JsonResponse {
     callback: Option<String>,
 }
 
-#[cfg(feature = "rustc_serialize_type")]
 impl JsonResponse {
+    #[cfg(feature = "rustc_serialize_type")]
     pub fn new<T: ToJson>(value: T, callback: Option<String>) -> JsonResponse {
         JsonResponse {
             value: value.to_json(),
             callback: callback,
         }
     }
-}
 
-#[cfg(feature = "serde_type")]
-impl JsonResponse {
+    #[cfg(feature = "serde_type")]
     pub fn new<T: ToJson>(value: T, callback: Option<String>) -> JsonResponse {
         JsonResponse {
             value: value::to_value(&value),
             callback: callback,
         }
+    }
+
+
+    pub fn json<T: ToJson>(value: T) -> JsonResponse {
+        JsonResponse::new(value, None)
+    }
+
+    pub fn jsonp<T: ToJson>(value: T, cb_name: String) -> JsonResponse {
+        JsonResponse::new(value, Some(cb_name))
     }
 }
 
@@ -72,14 +79,13 @@ impl PluginFor<Response> for JsonResponseMiddleware {
     }
 }
 
-#[cfg(feature = "rustc_serialize_type")]
+
 impl AfterMiddleware for JsonResponseMiddleware {
-    fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
-        let mut resp = r;
+    #[cfg(feature = "rustc_serialize_type")]
+    fn after(&self, _: &mut Request, mut resp: Response) -> IronResult<Response> {
         let header_body =
             resp.extensions
-                .get::<JsonResponseMiddleware>()
-                .as_ref()
+                .remove::<JsonResponseMiddleware>()
                 .and_then(|j| {
                     if let Ok(json_string) = json::encode(&j.value) {
                         match j.callback {
@@ -87,6 +93,7 @@ impl AfterMiddleware for JsonResponseMiddleware {
                                 let mut jsonp = String::new();
                                 jsonp.push_str(cb);
                                 jsonp.push('(');
+                                jsonp.push_str(&json_string);
                                 jsonp.push(')');
                                 Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
                             }
@@ -105,16 +112,14 @@ impl AfterMiddleware for JsonResponseMiddleware {
         }
         Ok(resp)
     }
-}
 
-#[cfg(feature = "serde_type")]
-impl AfterMiddleware for JsonResponseMiddleware {
+
+    #[cfg(feature = "serde_type")]
     fn after(&self, _: &mut Request, r: Response) -> IronResult<Response> {
         let mut resp = r;
         let header_body =
             resp.extensions
-                .get::<JsonResponseMiddleware>()
-                .as_ref()
+                .remove::<JsonResponseMiddleware>()
                 .and_then(|j| {
                     if let Ok(json_string) = serde_json::to_string(&j.value) {
                         match j.callback {
@@ -122,6 +127,7 @@ impl AfterMiddleware for JsonResponseMiddleware {
                                 let mut jsonp = String::new();
                                 jsonp.push_str(cb);
                                 jsonp.push('(');
+                                jsonp.push_str(&json_string);
                                 jsonp.push(')');
                                 Some((ContentType(mime!(Text/Javascript; Charset=Utf8)), jsonp))
                             }
@@ -139,5 +145,10 @@ impl AfterMiddleware for JsonResponseMiddleware {
             resp.set_mut(body);
         }
         Ok(resp)
+    }
+
+    fn catch(&self, req: &mut Request, mut err: IronError) -> IronResult<Response> {
+        err.response = try!(self.after(req, err.response));
+        Err(err)
     }
 }
