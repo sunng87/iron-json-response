@@ -56,7 +56,7 @@ impl JsonResponse {
 }
 
 
-pub struct JsonResponseMiddleware {}
+pub struct JsonResponseMiddleware;
 
 impl typemap::Key for JsonResponseMiddleware {
     type Value = JsonResponse;
