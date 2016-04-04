@@ -7,7 +7,7 @@ Iron Json Response
 
 Middleware for json or jsonp response with [Iron
 framework](http://ironframework.io). Both rustc_serialize (default
-feature) and [serde](https://github.com/serde/json) (feature
+feature) and [serde](https://github.com/serde-rs/json) (feature
 `serde_type`, no default features) are supported.
 
 Usage
