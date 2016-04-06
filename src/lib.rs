@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate mime;
 extern crate iron;
-extern crate plugin;
 #[cfg(feature = "serde_type")]
 extern crate serde;
 #[cfg(feature = "serde_type")]
@@ -12,7 +11,6 @@ extern crate rustc_serialize;
 use iron::prelude::*;
 use iron::{AfterMiddleware, typemap};
 use iron::modifier::Modifier;
-use plugin::Plugin as PluginFor;
 use iron::headers::ContentType;
 
 #[cfg(feature = "rustc_serialize_type")]
@@ -67,18 +65,6 @@ impl Modifier<Response> for JsonResponse {
         resp.extensions.insert::<JsonResponseMiddleware>(self);
     }
 }
-
-impl PluginFor<Response> for JsonResponseMiddleware {
-    type Error = ();
-
-    fn eval(resp: &mut Response) -> Result<JsonResponse, ()> {
-        resp.extensions
-            .get::<JsonResponseMiddleware>()
-            .ok_or(())
-            .map(|t| t.clone())
-    }
-}
-
 
 impl AfterMiddleware for JsonResponseMiddleware {
     #[cfg(feature = "rustc_serialize_type")]
