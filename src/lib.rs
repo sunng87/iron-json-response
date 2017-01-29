@@ -38,7 +38,7 @@ impl JsonResponse {
     #[cfg(feature = "serde_type")]
     pub fn new<T: ToJson>(value: T, callback: Option<String>) -> JsonResponse {
         JsonResponse {
-            value: value::to_value(&value),
+            value: value::to_value(&value).unwrap_or(Json::Null),
             callback: callback,
         }
     }

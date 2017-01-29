@@ -6,7 +6,9 @@ extern crate rustc_serialize;
 #[cfg(feature = "serde_type")]
 extern crate serde;
 #[cfg(feature = "serde_type")]
+#[macro_use]
 extern crate serde_json;
+#[cfg(feature = "rustc_serialize_type")]
 #[macro_use]
 extern crate maplit;
 
@@ -49,33 +51,26 @@ mod data {
 
 #[cfg(feature = "serde_type")]
 mod data {
-    use serde_json::value::{self, Value};
-    use std::collections::BTreeMap;
+    use serde_json::value::Value;
 
     pub fn make_data() -> Value {
-        let player: Vec<BTreeMap<String, Value>> = vec![btreemap! {
-                "name".to_owned() => value::to_value("Teixeira"),
-                "apps".to_owned() => value::to_value(&7u16),
-                "goals".to_owned() => value::to_value(&2u16),
-                "assists".to_owned() => value::to_value(&1u16)
-            },
-                                                        btreemap! {
-                "name".to_owned() => value::to_value("Ramires"),
-                "apps".to_owned() => value::to_value(&6u16),
-                "goals".to_owned() => value::to_value(&2u16),
-                "assists".to_owned() => value::to_value(&3u16)
-            },
-                                                        btreemap! {
-                "name".to_owned() => value::to_value("Wu Xi"),
-                "apps".to_owned() => value::to_value(&7u16),
-                "goals".to_owned() => value::to_value(&1u16),
-                "assists".to_owned() => value::to_value(&2u16)
-            }];
-        let team = btreemap! {
-            "team".to_owned() => value::to_value("Jiangsu Suning"),
-            "players".to_owned() => value::to_value(&player)
-        };
-        value::to_value(&team)
+        let players = json!([{ "name": "Teixeira",
+               "apps": 7,
+               "goals": 2,
+               "assists": 1                             },
+                             { "name": "Ramires",
+               "apps": 6,
+               "goals": 2,
+               "assists": 3                             },
+                             { "name": "Wu Xi",
+               "apps": 7,
+               "goals": 1,
+            "assists": 2                             }]);
+        let team = json!({
+            "team": "Jiangsu Suning",
+            "players": players
+        });
+        team
     }
 }
 
