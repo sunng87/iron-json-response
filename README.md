@@ -6,9 +6,9 @@ Iron Json Response
 [![](https://img.shields.io/crates/d/iron-json-response.svg)](https://crates.io/crates/iron-json-response)
 
 Middleware for json or jsonp response with [Iron
-framework](http://ironframework.io). Both rustc_serialize (default
-feature) and [serde](https://github.com/serde-rs/json) (feature
-`serde_type`, no default features) are supported.
+framework](http://ironframework.io). Using
+[serde](https://github.com/serde-rs/json) for data type and
+serialization.
 
 Usage
 -----
