@@ -39,6 +39,12 @@ impl JsonResponse {
 
 pub struct JsonResponseMiddleware;
 
+impl JsonResponseMiddleware {
+    pub fn new() -> Self {
+        JsonResponseMiddleware {}
+    }
+}
+
 impl typemap::Key for JsonResponseMiddleware {
     type Value = JsonResponse;
 }
