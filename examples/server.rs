@@ -57,7 +57,7 @@ fn handler(req: &mut Request) -> IronResult<Response> {
 
 fn main() {
     let mut chain = Chain::new(handler);
-    chain.link_after(JsonResponseMiddleware);
+    chain.link_after(JsonResponseMiddleware::new());
     println!("Server running at http://localhost:3000/");
     Iron::new(chain).http("localhost:3000").unwrap();
 }

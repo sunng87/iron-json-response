@@ -22,7 +22,7 @@ extern crate iron_json_response as ijr;
 use ijr::{JsonResponseMiddleware, JsonResponse};
 
 let mut chain = Chain::new(...);
-chain.link_after(JsonResponseMiddleware{});
+chain.link_after(JsonResponseMiddleware::new());
 ...
 ```
 
